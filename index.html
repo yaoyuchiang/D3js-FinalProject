@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Map</title>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="topojson.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Lato');
+
+        svg {
+            background-color: white;
+            fill: rgba(123, 123, 123, 0.95);
+            border: 1px solid rgba(123, 123, 123, 0.95);
+            display: block;
+            margin: 0 auto;
+
+
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 600;
+            font-family: 'Lato', sans-serif;
+            text-align: center;
+            margin: 10px auto;
+        }
+
+
+        .gradientText {
+            font-weight: 600;
+            font-family: 'Lato', sans-serif;
+
+        }
+
+        #tooltip {
+            font-family: 'Lato', sans-serif;
+            font-size: 15px;
+            position: absolute;
+            background: #282828;
+            text-align: center;
+            width: 100px;
+            height: auto;
+            padding: 0px 10px;
+            color: white;
+            border-radius: 10%;
+        }
+
+
+
+        #tooltip.hidden {
+            display: none;
+        }
+
+    </style>
+
+
+</head>
+
+<body>
+    <div id="tooltip" class="hidden">
+        <p><strong id="country">Hello</strong></p>
+        <p id="deathAmount">toolip</p>
+    </div>
+
+
+    <div class="title">
+        2006 - 2017 <br> Choropleth Map of Murdered Journalists Worldwide
+    </div>
+
+    <svg width="1000" height="600"></svg>
+
+    <script>
+        //        
+        var projection;
+        projection = d3.geo.mercator().center([0, 35]).scale(150);
+        var path = d3.geo.path().projection(projection);
+
+
+        //        var path = d3.geo.path().projection(projection);
+        d3.json("countries.json", function(DataSet) {
+
+            var features = DataSet.features;
+
+            d3.csv("journalist-file.csv", function(jDataSet) {
+                var cases = [];
+                var nDataSet = d3.nest().key(function(d) {
+                    return d.id;
+                }).rollup(function(v) {
+                    return v.length;
+                }).entries(jDataSet);
+
+                nDataSet.forEach(function(d) {
+                    cases[d.key] = d.values;
+
+                });
+
+                for (i = features.length - 1; i >= 0; i--) {
+                    features[i].amount = cases[features[i].id];
+                }
+                console.log(DataSet);
+                bind(DataSet, cases);
+                render(DataSet);
+
+
+
+
+
+
+            });
+        });
+
+        function bind(geoRoot, cases) {
+
+
+            projection = d3.geo.mercator().center([0, 45]).scale(150);
+
+
+            var path = d3.geo.path().projection(projection);
+
+            var selection = d3.select("svg").selectAll("path").data(geoRoot.features);
+
+            selection.enter().append("path").classed("map-boundary", true).attr("d", path);
+            selection.exit().remove();
+
+
+        }
+
+        function render(DataSet) {
+
+            //console.log(nDataSet);
+
+            var theAmount = DataSet.features.amount
+
+            var color = d3.scale.linear().domain([0, 35]).range(["#F59292", "#d91a1a"]);
+
+
+            d3.selectAll("path")
+                .style({
+                    fill: function(d) {
+                        return color(d.amount)
+                    },
+                    stroke: "#e3e3e3",
+                    "stroke-width": "0.5px",
+                }).attr("d", path)
+
+            d3.selectAll("path")
+                .on("mouseover", function(d) {
+                    d3.select(this).style({
+                        fill: function(d) {
+                            if (d.amount != undefined) {
+                                return "#FFC93C"
+                            }
+                        }
+                    })
+                    if (d.amount != undefined) {
+                        var coordinates = d3.mouse(this);
+                        var x = coordinates[0];
+                        var y = coordinates[1];
+
+                        var tooltip = d3.select("#tooltip").style({
+                            left: (x + 10) + "px",
+                            top: (y + 10) + "px"
+                        });
+
+                        d3.select("#tooltip").classed("hidden", false)
+
+                        tooltip.select("#country").text(d.properties.name);
+                        tooltip.select("#deathAmount").text(d.amount +" "+ "death(s)");
+                    }
+
+
+
+                })
+                .on("mouseout", function(d) {
+                    d3.select(this).style({
+                        fill: function(d) {
+                            return color(d.amount)
+                        }
+
+                    })
+                    d3.select("#tooltip").classed("hidden", true)
+                })
+                .attr("d", path)
+
+
+
+            var defs = d3.select("svg").append("defs");
+
+            var linearGradient = defs.append("linearGradient")
+                .attr("id", "gradientBar")
+                .attr("x1", "0%")
+                .attr("y1", "100%")
+                .attr("x2", "0%")
+                .attr("y2", "00%");
+
+            var stop1 = linearGradient.append("stop")
+                .attr("offset", "0%")
+                .style("stop-color", "#F59292");
+
+            var stop2 = linearGradient.append("stop")
+                .attr("offset", "100%")
+                .style("stop-color", "rgb(146, 0, 0)");
+
+            var gradientBar = d3.select("svg").append("rect")
+                .attr("x", 50)
+                .attr("y", 220)
+                .attr({
+                    rx: 10,
+                    ry: 10
+                })
+                .attr("width", 30)
+                .attr("height", 300)
+                .style("fill", "url(#" + linearGradient.attr("id") + ")")
+                .style({
+                    stroke: "white",
+                    "stroke-width": "1.5px",
+                })
+
+
+            var minNumber = d3.select("svg").append("text")
+                .attr("class", "gradientText")
+                .attr("x", 85)
+                .attr("y", 518)
+                .attr("dy", "-0.3em")
+                .style({
+                    fill: "black",
+                })
+                .text(" " + "1");
+
+            var midNumber = d3.select("svg").append("text")
+                .attr("class", "gradientText")
+                .attr("x", 85)
+                .attr("y", 379)
+                .attr("dy", "-0.3em")
+                .style({
+                    fill: "black",
+                })
+                .text("80");
+
+            var maxNumber = d3.select("svg").append("text")
+                .attr("class", "gradientText")
+                .attr("x", 85)
+                .attr("y", 240)
+                .attr("dy", "-0.3em")
+                .style({
+                    fill: "black",
+                })
+                .text("125");
+
+
+
+        }
+
+
+        function bind(geoRoot, cases) {
+
+
+            var selection = d3.select("svg").selectAll("path").data(geoRoot.features);
+
+            selection.enter().append("path").classed("map-boundary", true).attr("d", path);
+            selection.exit().remove();
+
+
+        }
+
+    </script>
+
+
+</body>
+
+</html>
