@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Map</title>
+    <title>Choropleth Map of Killed Journalists Worldwide</title>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="topojson.min.js"></script>
     <style>
@@ -52,7 +52,6 @@
         #tooltip.hidden {
             display: none;
         }
-
     </style>
 
 
@@ -131,7 +130,6 @@
 
             //console.log(nDataSet);
 
-            var theAmount = DataSet.features.amount
 
             var color = d3.scale.linear().domain([0, 35]).range(["#F59292", "#d91a1a"]);
 
@@ -143,9 +141,7 @@
                     },
                     stroke: "#e3e3e3",
                     "stroke-width": "0.5px",
-                }).attr("d", path)
-
-            d3.selectAll("path")
+                })
                 .on("mouseover", function(d) {
                     d3.select(this).style({
                         fill: function(d) {
@@ -167,7 +163,7 @@
                         d3.select("#tooltip").classed("hidden", false)
 
                         tooltip.select("#country").text(d.properties.name);
-                        tooltip.select("#deathAmount").text(d.amount +" "+ "death(s)");
+                        tooltip.select("#deathAmount").text(d.amount + " " + "death(s)");
                     }
 
 
@@ -264,8 +260,23 @@
 
 
         }
-
     </script>
+
+    <table class="hidden">
+        <tr>
+            <td colspan="2">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Name
+            </td>
+            <td>
+                Date
+            </td>
+        </tr>
+
+    </table>
 
 
 </body>
